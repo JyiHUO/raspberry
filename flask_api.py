@@ -5,10 +5,17 @@ from flask_sqlalchemy import SQLAlchemy
 import config
 import sqlite3
 from flask import g
+from flask_mail import Mail, Message
 
+
+
+mail = Mail()
 app = Flask(__name__)
 app.config.from_object(config)
-DATABASE = 'user_location.db'
+
+
+DATABASE = 'user_feature.db'
+mail.init_app(app)
 
 
 def get_db():
@@ -27,7 +34,26 @@ def close_connection(exception):
 
 @app.route("/")
 def index():
+    # msg = Message("Hello, this for test",
+    #               sender=app.config["MAIL_USERNAME"],
+    #               recipients=["b.ben.hjy@gmail.com"])
+    # mail.send(msg)
     return "hello world"
+
+
+@app.route("/sign_up", methods=["GET", "POST"])
+def sign_up():
+    if request.method == "GET":
+        return render_template("registration.html")
+    else:
+        username = request.form.get("username")
+        email = request.form.get("email")
+        cur = get_db()
+        cur.execute("delete from user_feature where username='{}'".format(username))
+        sql_command = "INSERT INTO user_feature VALUES ('{}', '{}')".format(username, email)
+        cur.execute(sql_command)
+        cur.commit()
+        return "Sign up successfully"
 
 
 @app.route("/send/<info>")
@@ -36,11 +62,18 @@ def send(info):
     # username text, latitude  real, Longitude real, temperature real, pressure real, humidity real
     info = info.split("-")
     print(info)
-    cur = get_db()
-    cur.execute("delete from user_feature where username='{}'".format(info[0]))
-    sql_command = "INSERT INTO user_feature VALUES ('{}',{},{},{})".format(info[0], info[1], info[2], info[3], info[4], info[5])
-    cur.execute(sql_command)
-    cur.commit()
+    cur = get_db().cursor()
+    # cur.execute("delete from user_feature where username='{}'".format(info[0]))
+    # sql_command = "INSERT INTO user_feature VALUES ('{}',{},{},{},{},{})".format(info[0], info[1], info[2], info[3], info[4], info[5])
+    # cur.execute(sql_command)
+    # cur.commit()
+    cur.execute("select * from user_feature where username='{}'".format(info[0]))
+    to_email = cur.fetchall()[1]
+    msg = Message("Help!!! {} is in danger. The location is {}".format(info[0], info[1]),
+                  sender=app.config["MAIL_USERNAME"],
+                  recipients=to_email)
+    mail.send(msg)
+
     return "Successfully send"
 
 
@@ -53,4 +86,4 @@ def get(username):
 
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=4999)
+    app.run(port=4999, debug=True)

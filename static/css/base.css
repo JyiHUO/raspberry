@@ -1,0 +1,14 @@
+.logo{
+    width: 20px;
+}
+
+body{
+    background: lightgray;
+}
+
+.body{
+    width: 730px;
+    background: white;
+    margin: 0 auto;
+    overflow: hidden;
+}

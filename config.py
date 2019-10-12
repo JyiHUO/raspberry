@@ -11,3 +11,10 @@ DATABASE = 'hi_movie'
 # DB_URI = ""
 SQLALCHEMY_DATABASE_URI = 'sqlite:///db/{}.db'.format(DATABASE)
 SQLALCHEMY_TRACK_MODIFICATIONS = True
+
+# email
+MAIL_SERVER = "smtp.163.com"
+MAIL_PORT = 465
+MAIL_USE_SSL = True
+MAIL_USERNAME = "huojunyi2019@163.com"
+MAIL_PASSWORD = "2019fallp"

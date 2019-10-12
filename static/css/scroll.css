@@ -1,0 +1,21 @@
+.dynamicContent #content {
+	position: relative;
+}
+.box1 {
+	margin: 10px;
+	width: 200px;
+}
+
+.dynamicContent #loader {
+	height: 0;
+	overflow: hidden;
+	line-height: 60px;
+}
+.dynamicContent #loader.active {
+	height: 60px;
+}
+.dynamicContent #loader img {
+	vertical-align: text-bottom;
+    margin: auto;
+}
+
