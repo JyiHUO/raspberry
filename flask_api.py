@@ -7,6 +7,7 @@ import sqlite3
 from flask import g
 from flask_mail import Mail, Message
 import folium
+from folium.plugins import HeatMap
 import geocoder
 
 mail = Mail()
@@ -102,6 +103,14 @@ def save_data(info):
     return "save successfully"
 
 
+@app.route("/heatmap", methods=["GET", "POST"])
+def heatmap():
+    if request.method == "GET":
+        return render_template("heatmap.html")
+    else:
+        username = request.form.get("username")
+        return redirect(url_for("get_heatmap", username=username))
+
 @app.route("/get_heatmap/<username>")
 def get_heatmap(username):
 
@@ -131,8 +140,12 @@ def get_heatmap(username):
         check_dict[username1]["risk"] = risk
         check_dict[username2]['email'] = email
 
+    if not username in check_dict:
+        return "Cannot find this guy"
 
     folium_map = folium.Map(location=(check_dict[username]['lon'], check_dict[username]['lat']), zoom_start=14)
+    hm_wide = HeatMap( list(zip([check_dict[username]['lon'] ], [check_dict[username]['lat'] ], [check_dict[username]["risk"]])), min_opacity=0.2, max_val=1, radius=20, blur=10, max_zoom=15, )
+    folium_map.add_child(hm_wide)
     for key in check_dict.keys():
         folium.Marker((check_dict[key]["lon"], check_dict[key]['lat']), popup="username: "+key+"\n"+"risk: "+str(check_dict[key]['risk'])+ "\n"+check_dict[key]["email"] ).add_to(folium_map)
     # close db
