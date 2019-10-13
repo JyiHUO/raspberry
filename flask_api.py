@@ -6,8 +6,8 @@ import config
 import sqlite3
 from flask import g
 from flask_mail import Mail, Message
-
-
+import folium
+import geocoder
 
 mail = Mail()
 app = Flask(__name__)
@@ -49,8 +49,8 @@ def sign_up():
         username = request.form.get("username")
         email = request.form.get("email")
         cur = get_db()
-        cur.execute("delete from user_feature where username='{}'".format(username))
-        sql_command = "INSERT INTO user_feature VALUES ('{}', '{}')".format(username, email)
+        cur.execute("delete from user_email where username='{}'".format(username))
+        sql_command = "INSERT INTO user_email VALUES ('{}', '{}')".format(username, email)
         cur.execute(sql_command)
         cur.commit()
         return "Sign up successfully"
@@ -67,14 +67,63 @@ def send(info):
     # sql_command = "INSERT INTO user_feature VALUES ('{}',{},{},{},{},{})".format(info[0], info[1], info[2], info[3], info[4], info[5])
     # cur.execute(sql_command)
     # cur.commit()
-    cur.execute("select * from user_feature where username='{}'".format(info[0]))
-    to_email = cur.fetchall()[1]
+    print(info[0])
+    cur.execute("select * from user_email where username='{}'".format(info[0]))
+    to_email = cur.fetchall()[0][1]
     msg = Message("Help!!! {} is in danger. The location is {}".format(info[0], info[1]),
                   sender=app.config["MAIL_USERNAME"],
-                  recipients=to_email)
+                  recipients=[to_email])
     mail.send(msg)
 
     return "Successfully send"
+
+@app.route("/save_data/<info>")
+def save_data(info):
+    # username-lon-lat-risk
+    info = info.split("-")
+    print(info)
+    username = info[0]
+    cur = get_db()
+    cur.execute("delete from user_info where username='{}'".format(username))
+    sql_command = "INSERT INTO user_info VALUES ('{}', {}, {}, {})".format(username, info[1], info[2], info[3])
+    cur.execute(sql_command)
+    cur.commit()
+    return "save successfully"
+
+
+@app.route("/get_heatmap/<username>")
+def get_heatmap(username):
+
+    check_dict = dict()
+    cur = get_db().cursor()
+    # cur.execute("select * from user_info where username='{}'".format(username))
+    cur.execute("select * from user_info")
+    user_info = cur.fetchall()
+    cur.execute("select * from user_email")
+    user_email = cur.fetchall()
+    target_lon = 0
+    target_lat = 0
+    for i in range(len(user_info)):
+        username1 = user_info[i][0]
+        username2 = user_email[i][0]
+        email = user_email[i][1]
+        lon = user_info[i][1]
+        lat = user_info[i][2]
+        risk = user_info[i][3]
+        if not username1 in check_dict:
+            check_dict[username1] = {"email":0, "lat":0, "lon":0, "risk":0}
+        if not username2 in check_dict:
+            check_dict[username2] = {"email": 0, "lat": 0, "lon": 0, "risk": 0}
+        check_dict[username1]["lon"] = lon
+        check_dict[username1]["lat"] = lat
+        check_dict[username1]["risk"] = risk
+        check_dict[username2]['email'] = email
+
+
+    folium_map = folium.Map(location=(check_dict[username]['lon'], check_dict[username]['lat']), zoom_start=14)
+    for key in check_dict.keys():
+        folium.Marker((check_dict[key]["lon"], check_dict[key]['lat']), popup="username: "+key+"\n"+"risk: "+str(check_dict[key]['risk'])+ "\n"+check_dict[key]["email"] ).add_to(folium_map)
+    return folium_map._repr_html_()
 
 
 @app.route("/get/<username>")
@@ -86,4 +135,4 @@ def get(username):
 
 
 if __name__ == '__main__':
-    app.run(port=4999, debug=True)
+    app.run(port=4999, debug=True, host="0.0.0.0")

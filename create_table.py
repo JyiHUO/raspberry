@@ -7,5 +7,8 @@ c = conn.cursor()
 # c.execute('''CREATE TABLE user_feature
 #              (username text, latitude  real, Longitude real, temperature real, pressure real, humidity real)''')
 
-c.execute('''CREATE TABLE user_feature
+c.execute('''CREATE TABLE user_info
+              (username text, lon real, lat real, risk real)''')
+
+c.execute('''CREATE TABLE user_email
               (username text, email text)''')
