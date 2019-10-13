@@ -53,7 +53,12 @@ def sign_up():
         sql_command = "INSERT INTO user_email VALUES ('{}', '{}')".format(username, email)
         cur.execute(sql_command)
         cur.commit()
+        # close db
+        if cur is not None:
+            cur.close()
         return "Sign up successfully"
+
+
 
 
 @app.route("/send/<info>")
@@ -62,11 +67,12 @@ def send(info):
     # username text, latitude  real, Longitude real, temperature real, pressure real, humidity real
     info = info.split("-")
     print(info)
-    cur = get_db().cursor()
+    db = get_db()
     # cur.execute("delete from user_feature where username='{}'".format(info[0]))
     # sql_command = "INSERT INTO user_feature VALUES ('{}',{},{},{},{},{})".format(info[0], info[1], info[2], info[3], info[4], info[5])
     # cur.execute(sql_command)
     # cur.commit()
+    cur = db.cursor()
     print(info[0])
     cur.execute("select * from user_email where username='{}'".format(info[0]))
     to_email = cur.fetchall()[0][1]
@@ -74,13 +80,15 @@ def send(info):
                   sender=app.config["MAIL_USERNAME"],
                   recipients=[to_email])
     mail.send(msg)
-
+    # close db
+    if db is not None:
+        db.close()
     return "Successfully send"
 
 @app.route("/save_data/<info>")
 def save_data(info):
     # username-lon-lat-risk
-    info = info.split("-")
+    info = info.split("&")
     print(info)
     username = info[0]
     cur = get_db()
@@ -88,6 +96,9 @@ def save_data(info):
     sql_command = "INSERT INTO user_info VALUES ('{}', {}, {}, {})".format(username, info[1], info[2], info[3])
     cur.execute(sql_command)
     cur.commit()
+    # close db
+    if cur is not None:
+        cur.close()
     return "save successfully"
 
 
@@ -95,7 +106,8 @@ def save_data(info):
 def get_heatmap(username):
 
     check_dict = dict()
-    cur = get_db().cursor()
+    db = get_db()
+    cur = db.cursor()
     # cur.execute("select * from user_info where username='{}'".format(username))
     cur.execute("select * from user_info")
     user_info = cur.fetchall()
@@ -111,9 +123,9 @@ def get_heatmap(username):
         lat = user_info[i][2]
         risk = user_info[i][3]
         if not username1 in check_dict:
-            check_dict[username1] = {"email":0, "lat":0, "lon":0, "risk":0}
+            check_dict[username1] = {"email":'', "lat":0, "lon":0, "risk":'0'}
         if not username2 in check_dict:
-            check_dict[username2] = {"email": 0, "lat": 0, "lon": 0, "risk": 0}
+            check_dict[username2] = {"email": '', "lat": 0, "lon": 0, "risk": '0'}
         check_dict[username1]["lon"] = lon
         check_dict[username1]["lat"] = lat
         check_dict[username1]["risk"] = risk
@@ -123,6 +135,9 @@ def get_heatmap(username):
     folium_map = folium.Map(location=(check_dict[username]['lon'], check_dict[username]['lat']), zoom_start=14)
     for key in check_dict.keys():
         folium.Marker((check_dict[key]["lon"], check_dict[key]['lat']), popup="username: "+key+"\n"+"risk: "+str(check_dict[key]['risk'])+ "\n"+check_dict[key]["email"] ).add_to(folium_map)
+    # close db
+    if db is not None:
+        db.close()
     return folium_map._repr_html_()
 
 

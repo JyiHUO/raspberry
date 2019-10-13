@@ -40,8 +40,8 @@ def send_data(vals):
     lon = str(vals[1])
     lat = str(vals[2])
     risk = str(vals[3])
-    tmp = username+"-"+lon+"-"+lat+"-"+risk
-    response = requests.get('http://120.55.167.195:4999/send/{}'.format(tmp))
+    tmp = username+"&"+lon+"&"+lat+"&"+risk
+    response = requests.get('http://120.55.167.195:4999/save_data/{}'.format(tmp))
 
 
 # Initialise the BME280
